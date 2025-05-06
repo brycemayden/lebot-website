@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeBot - Your Classroom Assistant</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #001F3F;
+      color: white;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .avatar {
+      width: 200px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .chat-box {
+      width: 100%;
+      max-width: 600px;
+      background: #003366;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    .messages {
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      background: #002244;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .input-area {
+      display: flex;
+      gap: 10px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px;
+      background-color: #FDB927;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .footer {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Talk to LeBot 🏀</h1>
+  <img src="bronbron.png" alt="LeBot Avatar" class="avatar" />
+  <div class="chat-box">
+    <div class="messages" id="messages"></div>
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Ask LeBot anything..." />
+      <button onclick="sendMessage()">Send</button>
+      <button onclick="startListening()">🎤</button>
+    </div>
+  </div>
+  <div class="footer">
+    Or visit <a href="https://chatgpt.com/g/g-681a23d9248481919a9d653bfa0c7f29-bron-op-bot" target="_blank">LeBot on ChatGPT</a>
+  </div>
+
+  <script>
+    const messagesDiv = document.getElementById('messages');
+
+    async function sendMessage() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(`You: ${text}`);
+      input.value = '';
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer sk-provided-key'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: [{ role: 'system', content: 'You are LeBot, a helpful classroom assistant themed after LeBron James.' }, { role: 'user', content: text }]
+        })
+      });
+
+      const data = await response.json();
+      const botReply = data.choices[0].message.content;
+      addMessage(`LeBot: ${botReply}`);
+      speak(botReply);
+    }
+
+    function addMessage(msg) {
+      const p = document.createElement('p');
+      p.textContent = msg;
+      messagesDiv.appendChild(p);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function startListening() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('userInput').value = transcript;
+        sendMessage();
+      };
+    }
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      speechSynthesis.speak(utterance);
+    }
+  </script>
+</body>
+</html>
