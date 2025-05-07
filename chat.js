@@ -10,7 +10,17 @@ export default async function handler(req, res) {
   }
 
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+  if (!OPENAI_API_KEY) {
+    console.error("Missing OPENAI_API_KEY");
+    return res.status(500).json({ error: "Missing OpenAI API key" });
+  }
+
   const { messages } = req.body;
+
+  if (!messages || !Array.isArray(messages)) {
+    console.error("Invalid or missing messages in request body");
+    return res.status(400).json({ error: "Invalid message format" });
+  }
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -26,9 +36,15 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    res.status(200).json(data);
+
+    if (response.ok) {
+      res.status(200).json(data);
+    } else {
+      console.error("OpenAI API error:", data);
+      res.status(response.status).json({ error: data });
+    }
   } catch (error) {
-    console.error("Error in API route:", error);
-    res.status(500).json({ error: "Failed to fetch from OpenAI" });
+    console.error("Unhandled error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 }
